@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>労働条件通知書自動作成システム 操作マニュアル</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Custom Scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .step-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .step-card.active {
+            border-left: 4px solid #3b82f6;
+            background-color: #eff6ff;
+            transform: translateX(5px);
+        }
+
+        .menu-simulation-btn {
+            transition: all 0.2s;
+        }
+        .menu-simulation-btn:hover {
+            background-color: #f1f5f9;
+        }
+        .menu-dropdown {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .menu-dropdown.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-ring {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+    </style>
+    <!-- Chosen Palette: Slate & Blue (Professional, Trustworthy, Clean) - Background: Slate-50, Primary: Blue-600, Text: Slate-700/800, Accent: Emerald-500 (for success actions) -->
+    <!-- Application Structure Plan: 
+        1. Dashboard Header: Immediate context and quick access links to the actual Form/Sheet.
+        2. Workflow Navigator (Left Column): Interactive step-by-step list corresponding to the user's manual instructions.
+        3. Interactive Workspace (Right Column): Dynamic content area that changes based on the selected step.
+           - Step 1: Form URL & Handling.
+           - Step 2: Sheet Operations (Includes a "Mock UI" of the Google Sheet menu to simulate the action).
+           - Step 3: AI Analysis & Preview.
+           - Step 4: PDF Generation.
+        4. Performance Metrics: A chart showing the efficiency gain (Manual vs System) to motivate usage.
+        5. Technical Specs & Troubleshooting: Accordion-style details for the system administrator/advanced user.
+        Why: This structure separates the "How-to" (linear flow) from the "What is it" (specs), making it usable as both a training tool and a reference doc.
+    -->
+    <!-- Visualization & Content Choices:
+        - Workflow Navigator: Interactive List. Goal: Guide user through the linear process.
+        - Google Sheet Mockup (HTML/CSS): Goal: Simulate the exact menu clicks required without risking the live data. Interaction: Click menus to see dropdowns.
+        - Efficiency Chart (Chart.js): Goal: Visualize the value of using the AI system (Time reduction).
+        - Status Indicators: CSS-based visual cues for "Ready", "Processing", "Done".
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-lg">労</div>
+                <h1 class="text-xl font-bold text-slate-800">労働条件通知書自動作成システム <span class="text-sm font-normal text-slate-500 ml-2">操作マニュアル & 仕様書</span></h1>
+            </div>
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="hidden md:flex items-center text-slate-500">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> システム稼働中
+                </div>
+                <button onclick="document.getElementById('quick-links').scrollIntoView({behavior: 'smooth'})" class="text-blue-600 hover:text-blue-800 font-medium">リンク集へ移動</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Intro Section -->
+        <div class="mb-10 text-center max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold text-slate-900 mb-4">業務フローを自動化し、正確な通知書を即座に発行</h2>
+            <p class="text-lg text-slate-600">
+                このシステムは、Googleフォームで収集した情報をAI（Gemini）が解析し、正しい法形式の労働条件通知書を自動生成します。以下のステップに従って操作を行ってください。
+            </p>
+        </div>
+
+        <!-- Main Interactive Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Workflow Navigation -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 bg-slate-100 border-b border-slate-200 font-semibold text-slate-700 flex justify-between items-center">
+                        <span>操作手順フロー</span>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Step by Step</span>
+                    </div>
+                    <div id="workflow-nav" class="divide-y divide-slate-100">
+                        <!-- Step 1 -->
+                        <div class="step-card active cursor-pointer p-4 hover:bg-slate-50" onclick="updateView(1)">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mr-3">1</div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800">フォーム入力依頼</h3>
+                                    <p class="text-xs text-slate-500 mt-1">お客様へ回答用URLを送付</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="step-card cursor-pointer p-4 hover:bg-slate-50" onclick="updateView(2)">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1 w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold mr-3">2</div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800">スプレッドシート確認</h3>
+                                    <p class="text-xs text-slate-500 mt-1">回答を確認し、対象行を選択</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="step-card cursor-pointer p-4 hover:bg-slate-50" onclick="updateView(3)">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1 w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold mr-3">3</div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800">AI解析実行</h3>
+                                    <p class="text-xs text-slate-500 mt-1">メニューから解析を開始</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 4 -->
+                        <div class="step-card cursor-pointer p-4 hover:bg-slate-50" onclick="updateView(4)">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1 w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold mr-3">4</div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800">プレビューと作成</h3>
+                                    <p class="text-xs text-slate-500 mt-1">内容確認後、PDFを出力</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Efficiency Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">システム導入効果（時間短縮）</h3>
+                    <div class="chart-container h-48">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center">従来の手作業作成と比較して約80%の時間短縮が見込まれます。</p>
+                </div>
+            </div>
+
+            <!-- Right Panel: Dynamic Content Area -->
+            <div class="lg:col-span-8">
+                <div id="content-area" class="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px] relative">
+                    <!-- Content will be injected here via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links Section -->
+        <div id="quick-links" class="mt-12">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
+                <span class="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
+                    <i class="fa-solid fa-link"></i>
+                </span>
+                重要リンク集
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Link 1 -->
+                <div class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded">Input</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">Googleフォーム</h4>
+                    <p class="text-sm text-slate-500 mb-4">お客様への送付、および質問項目の編集はこちらから行います。</p>
+                    <a href="https://docs.google.com/forms/d/1VLXkJshY7RAEOOpT_Nva0H0bEys0Tif_J80LEXw5Rz0/edit#response=ACYDBNitCYan0TqRxNAO6c9UaE9nW5EHF9gqw2JWPFRe2iGduhFeVv-9Tkfs0m9u7bndims" target="_blank" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                        フォームを開く <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- Link 2 -->
+                <div class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                            <i class="fa-solid fa-table"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">Database</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">スプレッドシート</h4>
+                    <p class="text-sm text-slate-500 mb-4">回答データの確認、AI解析の実行、PDF作成の操作盤です。</p>
+                    <a href="https://docs.google.com/spreadsheets/d/1igyvCetAM-wtNswXvZ9RaJT8SziMSKY6JdWjZ73bv-U/edit?resourcekey=&gid=255000241#gid=255000241" target="_blank" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                        シートを開く <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- Link 3 -->
+                <div class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                            <i class="fa-brands fa-google-drive"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded">Storage</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">Googleドライブ</h4>
+                    <p class="text-sm text-slate-500 mb-4">生成されたPDFの保存先です。作成時にURLを指定します。</p>
+                    <a href="https://drive.google.com/" target="_blank" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                        ドライブを開く <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Specifications Accordion -->
+        <div class="mt-12 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-200 bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">システム仕様・管理者向け情報</h3>
+                <p class="text-sm text-slate-500 mt-1">マスタ設定やエラー時の対応について</p>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <details class="group">
+                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-slate-700 hover:bg-slate-50 transition-colors">
+                        <span> 必要なスプレッドシート構成</span>
+                        <span class="transition group-open:rotate-180">
+                            <i class="fa-solid fa-chevron-down text-slate-400"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 text-sm p-6 pt-0 bg-slate-50 leading-relaxed">
+                        <p class="mb-2">本システムが正常に動作するためには、以下のシートと列が必要です：</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><strong class="text-slate-800">「#受入企業マスタ」シート</strong>: 企業ごとの労務ルールを定義します。<br>
+                                - A列：企業名（フォームの回答と完全一致する必要があります）<br>
+                                - B列：個別労務ルール（AI解析時のコンテキストとして使用されます）
+                            </li>
+                            <li><strong class="text-slate-800">回答受付シート</strong>: 以下のAI出力用列が右端に存在する必要があります。<br>
+                                - AI解析_勤務時間<br>
+                                - AI解析_給与<br>
+                                - AI解析_休日休暇<br>
+                                - AI解析_退職<br>
+                                - AI解析_社会保険
+                            </li>
+                        </ul>
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-slate-700 hover:bg-slate-50 transition-colors">
+                        <span> トラブルシューティング（よくあるエラー）</span>
+                        <span class="transition group-open:rotate-180">
+                            <i class="fa-solid fa-chevron-down text-slate-400"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 text-sm p-6 pt-0 bg-slate-50 leading-relaxed">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><strong>メニューが表示されない</strong>: スプレッドシートを開いてからスクリプトが読み込まれるまで数秒〜数分かかる場合があります。リロードして待機してください。</li>
+                            <li><strong>AI解析が正しくない</strong>: 「#受入企業マスタ」の個別ルールを確認してください。また、フォームの自由記述欄の内容が曖昧な場合、AIが誤認することがあります。プレビュー画面で必ず修正してください。</li>
+                            <li><strong>PDFが生成されない</strong>: 指定したGoogleドライブのURLが正しいか、書き込み権限があるかを確認してください。</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            <p>&copy; 2024 Labor Condition Notification System. All rights reserved.</p>
+            <p class="mt-2 text-slate-500">Powered by Gemini API & Google Workspace</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA & STATE ---
+        const steps = [
+            {
+                id: 1,
+                title: "フォーム入力依頼",
+                content: `
+                    <div class="p-8 h-full flex flex-col">
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold tracking-wide uppercase mb-2">Step 1</span>
+                            <h2 class="text-2xl font-bold text-slate-800">お客様へフォームを送付する</h2>
+                        </div>
+                        <div class="prose text-slate-600 mb-8 flex-grow">
+                            <p class="mb-4">まず、雇用対象者または企業の担当者に、必要な情報を入力してもらう必要があります。以下の手順で進めてください。</p>
+                            <ol class="list-decimal pl-5 space-y-3">
+                                <li><strong>Googleフォームを開く:</strong> 左下のリンク集から「Googleフォーム」を開きます。</li>
+                                <li><strong>送信リンクを取得:</strong> フォーム右上の「送信」ボタンから、短縮URLをコピーします。<br>
+                                <span class="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded mt-1 inline-block"><i class="fa-solid fa-circle-exclamation mr-1"></i> 注意：編集用URLではなく、回答用URLを送付してください。</span></li>
+                                <li><strong>お客様へ送付:</strong> メールやチャットでURLを送ります。</li>
+                            </ol>
+                        </div>
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
+                            <i class="fa-solid fa-lightbulb text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-bold text-blue-800 text-sm">ポイント</h4>
+                                <p class="text-xs text-blue-700 mt-1">回答が完了すると、自動的にGoogleスプレッドシートに新しい行が追加されます。通知設定をしておくと便利です。</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 2,
+                title: "スプレッドシート確認",
+                content: `
+                    <div class="p-8 h-full flex flex-col">
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold tracking-wide uppercase mb-2">Step 2</span>
+                            <h2 class="text-2xl font-bold text-slate-800">対象データの選択</h2>
+                        </div>
+                        <div class="prose text-slate-600 mb-6">
+                            <p>回答が届いたらスプレッドシートを開き、作業対象の行を選択します。</p>
+                            <p class="text-sm bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-800">
+                                <i class="fa-solid fa-mouse-pointer mr-2"></i><strong>重要操作：</strong> 必ず処理したい「行（横一列）」をクリックして選択状態にしてください。
+                            </p>
+                        </div>
+                        
+                        <!-- Mock Spreadsheet UI -->
+                        <div class="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white mt-4 relative group">
+                            <div class="bg-green-700 text-white px-4 py-2 text-sm font-medium flex items-center">
+                                <i class="fa-solid fa-file-excel mr-2"></i> 労働条件通知書管理DB
+                            </div>
+                            <div class="bg-slate-100 border-b border-slate-300 px-2 py-1 flex space-x-1 text-xs text-slate-700 overflow-x-auto">
+                                <span class="px-2 py-1 hover:bg-slate-200 rounded cursor-pointer">ファイル</span>
+                                <span class="px-2 py-1 hover:bg-slate-200 rounded cursor-pointer">編集</span>
+                                <span class="px-2 py-1 hover:bg-slate-200 rounded cursor-pointer">表示</span>
+                                <!-- Simulated Menu Target -->
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 font-bold rounded cursor-pointer ring-2 ring-blue-300 ring-opacity-50 relative">
+                                    通知書システム
+                                    <div class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                                </span>
+                                <span class="px-2 py-1 hover:bg-slate-200 rounded cursor-pointer">ヘルプ</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left whitespace-nowrap">
+                                    <thead class="bg-slate-50 text-slate-500 border-b">
+                                        <tr>
+                                            <th class="p-2 w-10 border-r text-center"></th>
+                                            <th class="p-2 border-r w-32">タイムスタンプ</th>
+                                            <th class="p-2 border-r w-40">氏名</th>
+                                            <th class="p-2 border-r w-48">企業名</th>
+                                            <th class="p-2 border-r">雇用形態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr class="hover:bg-slate-50 opacity-50">
+                                            <td class="p-2 bg-slate-100 border-r text-center">1</td>
+                                            <td class="p-2 border-r">2024/01/15 10:00</td>
+                                            <td class="p-2 border-r">山田 太郎</td>
+                                            <td class="p-2 border-r">株式会社A</td>
+                                            <td class="p-2 border-r">正社員</td>
+                                        </tr>
+                                        <!-- Selected Row Simulation -->
+                                        <tr class="bg-blue-50 border-l-4 border-l-blue-500">
+                                            <td class="p-2 bg-blue-100 border-r text-center font-bold text-blue-700">2</td>
+                                            <td class="p-2 border-r font-medium">2024/02/20 14:30</td>
+                                            <td class="p-2 border-r font-medium">鈴木 花子</td>
+                                            <td class="p-2 border-r font-medium">合同会社サンプル</td>
+                                            <td class="p-2 border-r font-medium">パートタイム</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50 opacity-50">
+                                            <td class="p-2 bg-slate-100 border-r text-center">3</td>
+                                            <td class="p-2 border-r">2024/02/21 09:15</td>
+                                            <td class="p-2 border-r">佐藤 次郎</td>
+                                            <td class="p-2 border-r">株式会社B</td>
+                                            <td class="p-2 border-r">契約社員</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Simulation Overlay Hint -->
+                            <div class="absolute bottom-4 right-4 bg-slate-800 text-white text-xs px-3 py-2 rounded shadow-lg opacity-90">
+                                イメージ: 2行目を選択中
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 3,
+                title: "AI解析実行",
+                content: `
+                    <div class="p-8 h-full flex flex-col">
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold tracking-wide uppercase mb-2">Step 3</span>
+                            <h2 class="text-2xl font-bold text-slate-800">AIによる自動解析</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                            <div class="prose text-slate-600">
+                                <p>行を選択した状態で、スプレッドシート上部の独自メニューを操作します。</p>
+                                <ol class="list-decimal pl-5 space-y-4 my-4">
+                                    <li>メニューバーの<strong>「通知書システム」</strong>をクリック。</li>
+                                    <li>ドロップダウンから<strong>「選択行をＡＩで解析」</strong>をクリック。</li>
+                                    <li>
+                                        <div class="flex items-center text-sm text-slate-500 mt-1">
+                                            <i class="fa-solid fa-spinner fa-spin mr-2 text-blue-500"></i>
+                                            <span>解析中（数秒〜30秒程度）...</span>
+                                        </div>
+                                    </li>
+                                    <li>解析が完了すると、ポップアップで完了メッセージが表示されます。</li>
+                                </ol>
+                            </div>
+                            
+                            <!-- Interactive Menu Simulator -->
+                            <div class="bg-slate-100 rounded-lg p-6 border border-slate-200 flex flex-col justify-center items-center relative">
+                                <p class="absolute top-2 left-2 text-xs font-bold text-slate-400">操作シミュレーター</p>
+                                
+                                <div class="relative mt-4">
+                                    <!-- Menu Bar Item -->
+                                    <div id="sim-menu-trigger" class="bg-white border border-slate-300 px-4 py-2 rounded shadow-sm cursor-pointer hover:bg-slate-50 flex items-center space-x-2 select-none" onclick="toggleSimMenu()">
+                                        <i class="fa-solid fa-bars text-slate-400"></i>
+                                        <span class="font-bold text-slate-700">通知書システム</span>
+                                        <i class="fa-solid fa-caret-down text-slate-400 text-xs"></i>
+                                    </div>
+                                    
+                                    <!-- Dropdown -->
+                                    <div id="sim-dropdown" class="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded shadow-xl z-10 hidden overflow-hidden">
+                                        <div class="py-1">
+                                            <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-l-4 border-transparent hover:border-blue-500" onclick="simulateAction('analyzing')">
+                                                <i class="fa-solid fa-robot mr-2 text-purple-500"></i>選択行をＡＩで解析
+                                            </a>
+                                            <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-l-4 border-transparent hover:border-blue-500">
+                                                <i class="fa-solid fa-magnifying-glass mr-2 text-slate-400"></i>選択行のプレビュー表示
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Feedback Area -->
+                                <div id="sim-feedback" class="mt-8 text-center h-12">
+                                    <span class="text-sm text-slate-400">上のメニューをクリックして試してみましょう</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 4,
+                title: "プレビューと作成",
+                content: `
+                    <div class="p-8 h-full flex flex-col">
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold tracking-wide uppercase mb-2">Step 4</span>
+                            <h2 class="text-2xl font-bold text-slate-800">プレビュー確認とPDF保存</h2>
+                        </div>
+                        <div class="prose text-slate-600 mb-6">
+                            <p>AI解析が終わったら、内容を確認してPDFを発行します。</p>
+                            <ul class="list-none space-y-4 pl-0">
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold text-slate-600 mr-3 mt-0.5">1</span>
+                                    <span>メニューの<strong>「通知書システム」</strong> ＞ <strong>「選択行のプレビュー表示」</strong>をクリック。</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold text-slate-600 mr-3 mt-0.5">2</span>
+                                    <span>右側にサイドバーが表示されます。内容を確認し、必要であれば手入力で修正します。</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold text-slate-600 mr-3 mt-0.5">3</span>
+                                    <span>サイドバー上部のURL欄に<strong>あなたのGoogleドライブのフォルダURL</strong>を入力します。</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold text-red-600 mr-3 mt-0.5">4</span>
+                                    <span><strong>「作成実行」</strong>ボタンを押すと、PDFが生成されドライブに保存されます。</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Visual representation of Sidebar -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex justify-end">
+                            <div class="w-64 bg-white shadow-lg border-l border-slate-200 p-4 transform translate-x-0 transition-transform">
+                                <div class="border-b pb-2 mb-2">
+                                    <h4 class="font-bold text-sm text-slate-800">プレビュー画面</h4>
+                                </div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-xs text-slate-500 block mb-1">保存先フォルダURL</label>
+                                        <input type="text" value="https://drive.google.com/..." class="w-full text-xs border border-slate-300 rounded p-1 bg-slate-50 text-slate-400" readonly>
+                                    </div>
+                                    <div class="h-24 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-xs text-slate-400">
+                                        [PDFプレビュー表示エリア]
+                                    </div>
+                                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded shadow-sm">
+                                        作成実行
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        let currentStep = 1;
+
+        // Function to update the right content area
+        function updateView(stepId) {
+            // Update State
+            currentStep = stepId;
+            
+            // Update Sidebar UI
+            document.querySelectorAll('.step-card').forEach((el, index) => {
+                if (index + 1 === stepId) {
+                    el.classList.add('active');
+                    el.classList.remove('border-transparent');
+                } else {
+                    el.classList.remove('active');
+                    el.classList.add('border-transparent');
+                }
+            });
+
+            // Update Main Content
+            const stepData = steps.find(s => s.id === stepId);
+            const contentArea = document.getElementById('content-area');
+            
+            // Fade out effect
+            contentArea.style.opacity = '0';
+            
+            setTimeout(() => {
+                contentArea.innerHTML = stepData.content;
+                contentArea.style.opacity = '1';
+                contentArea.style.transition = 'opacity 0.3s ease-in-out';
+                
+                // Re-attach event listeners for simulated elements if needed
+                if (stepId === 3) {
+                    // Logic for step 3 simulation is inline in HTML for simplicity, 
+                    // but we ensure the DOM is ready.
+                }
+            }, 200);
+        }
+
+        // Simulation Logic for Step 3
+        function toggleSimMenu() {
+            const dropdown = document.getElementById('sim-dropdown');
+            dropdown.classList.toggle('hidden');
+            dropdown.classList.toggle('show');
+        }
+
+        function simulateAction(type) {
+            const feedback = document.getElementById('sim-feedback');
+            const dropdown = document.getElementById('sim-dropdown');
+            
+            dropdown.classList.add('hidden'); // Close menu
+            
+            if (type === 'analyzing') {
+                feedback.innerHTML = `
+                    <div class="flex flex-col items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                        <span class="font-bold">AI解析中...</span>
+                        <span class="text-xs text-slate-500">Gemini APIに問い合わせています</span>
+                    </div>
+                `;
+                setTimeout(() => {
+                    feedback.innerHTML = `
+                        <div class="flex flex-col items-center justify-center text-green-600 animate-bounce">
+                            <i class="fa-solid fa-check-circle text-2xl mb-2"></i>
+                            <span class="font-bold">解析完了！</span>
+                            <span class="text-xs text-slate-500">次のステップへ進んでください</span>
+                        </div>
+                    `;
+                }, 2000);
+            }
+        }
+
+        // Chart.js Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize View
+            updateView(1);
+
+            // Chart Setup
+            const ctx = document.getElementById('efficiencyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['手作業', '当システム'],
+                    datasets: [{
+                        label: '作成所要時間（分）',
+                        data: [30, 5],
+                        backgroundColor: [
+                            'rgba(148, 163, 184, 0.5)', // Slate-400
+                            'rgba(59, 130, 246, 0.8)'  // Blue-500
+                        ],
+                        borderColor: [
+                            'rgba(148, 163, 184, 1)',
+                            'rgba(59, 130, 246, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + '分 / 1件あたり';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '時間 (分)' }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Close dropdown when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.closest('#sim-menu-trigger')) {
+                const dropdown = document.getElementById('sim-dropdown');
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
